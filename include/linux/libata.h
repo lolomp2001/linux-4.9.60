@@ -38,6 +38,7 @@
 #include <linux/acpi.h>
 #include <linux/cdrom.h>
 #include <linux/sched.h>
+#include <linux/synosata.h>
 
 /*
  * Define if arch has non-standard setup.  This is a _PCI_ standard

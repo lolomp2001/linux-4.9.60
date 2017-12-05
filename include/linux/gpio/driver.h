@@ -145,8 +145,10 @@ struct gpio_chip {
 						unsigned offset, int value);
 	int			(*get)(struct gpio_chip *chip,
 						unsigned offset);
+	int			(*get_multi_function)(struct gpio_chip *chip, unsigned offset);
 	void			(*set)(struct gpio_chip *chip,
 						unsigned offset, int value);
+	int			(*set_multi_function)(struct gpio_chip *chip, unsigned offset, int fn_num);
 	void			(*set_multiple)(struct gpio_chip *chip,
 						unsigned long *mask,
 						unsigned long *bits);
@@ -209,6 +211,9 @@ struct gpio_chip {
 			const struct of_phandle_args *gpiospec, u32 *flags);
 #endif
 };
+
+extern int gpio_get_multi_function(unsigned gpio);
+extern int gpio_set_multi_function(unsigned gpio, int value);
 
 extern const char *gpiochip_is_requested(struct gpio_chip *chip,
 			unsigned offset);

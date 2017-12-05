@@ -131,6 +131,10 @@ static char ata_force_param_buf[PAGE_SIZE] __initdata;
 module_param_string(force, ata_force_param_buf, sizeof(ata_force_param_buf), 0);
 MODULE_PARM_DESC(force, "Force ATA configurations including cable type, link speed and transfer mode (see Documentation/kernel-parameters.txt for details)");
 
+extern unsigned char SYNOEvansportIsBoardNeedPowerUpHDD(u32);
+extern int SYNO_CTRL_HDD_POWERON(int index, int value);
+extern int SYNO_CHECK_HDD_PRESENT(int index);
+
 static int atapi_enabled = 1;
 module_param(atapi_enabled, int, 0444);
 MODULE_PARM_DESC(atapi_enabled, "Enable discovery of ATAPI devices (0=off, 1=on [default])");
@@ -6234,6 +6238,27 @@ void ata_host_init(struct ata_host *host, struct device *dev,
 	host->ops = ops;
 }
 
+static void DelayForHWCtl(struct ata_port *pAp)
+{
+	int iIsDoLatency = 0;
+
+	if (!pAp) {
+		goto END;
+	}
+
+	if(SYNOEvansportIsBoardNeedPowerUpHDD(pAp->print_id)) {
+		SYNO_CTRL_HDD_POWERON(pAp->print_id, 1);
+		if (0 == SYNO_CHECK_HDD_PRESENT(pAp->print_id)) {
+			goto END;
+		}
+		SleepForLatency();
+		iIsDoLatency = 1;
+	}
+
+END:
+	return;
+}
+
 void __ata_port_probe(struct ata_port *ap)
 {
 	struct ata_eh_info *ehi = &ap->link.eh_info;
@@ -6256,6 +6281,7 @@ void __ata_port_probe(struct ata_port *ap)
 int ata_port_probe(struct ata_port *ap)
 {
 	int rc = 0;
+	DelayForHWCtl(ap);
 
 	if (ap->ops->error_handler) {
 		__ata_port_probe(ap);

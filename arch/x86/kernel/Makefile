@@ -130,6 +130,8 @@ else
 obj-y					+= unwind_guess.o
 endif
 
+obj-y					+= synology-gpio.o
+
 ###
 # 64 bit specific files
 ifeq ($(CONFIG_X86_64),y)

@@ -15,6 +15,12 @@ obj-$(CONFIG_GPIO_GENERIC)	+= gpio-generic.o
 # directly supported by gpio-generic
 gpio-generic-$(CONFIG_GPIO_GENERIC)	+= gpio-mmio.o
 
+obj-$(CONFIG_GPIO_INTELCE)	+= intelce_gpio.o
+intelce_gpio-objs	+= gpio-intelce.o
+intelce_gpio-objs	+= gpio-ce4100.o
+intelce_gpio-objs	+= gpio-ce4200.o
+intelce_gpio-objs	+= gpio-ce5300.o
+
 obj-$(CONFIG_GPIO_104_DIO_48E)	+= gpio-104-dio-48e.o
 obj-$(CONFIG_GPIO_104_IDIO_16)	+= gpio-104-idio-16.o
 obj-$(CONFIG_GPIO_104_IDI_48)	+= gpio-104-idi-48.o
