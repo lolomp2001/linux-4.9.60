@@ -142,6 +142,14 @@ config USB_EHCI_PCI
 	depends on PCI
 	default y
 
+config GEN3_USB
+        bool "Intel Media SOC Gen3 USB support"
+        depends on USB_EHCI_HCD
+        default y
+        ---help---
+          This option enables Intel Media SOC Gen3 USB support.
+          It makes ISO-IN transfers work well, like audio capture.
+
 config USB_EHCI_HCD_PMC_MSP
 	tristate "EHCI support for on-chip PMC MSP71xx USB controller"
 	depends on MSP_HAS_USB

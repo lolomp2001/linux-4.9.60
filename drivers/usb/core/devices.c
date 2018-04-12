@@ -63,6 +63,8 @@
 
 /* Define ALLOW_SERIAL_NUMBER if you want to see the serial number of devices */
 #define ALLOW_SERIAL_NUMBER
+#define USBCOPY_PORT_LOCATION 99
+#define SDCOPY_PORT_LOCATION 98
 
 static const char format_topo[] =
 /* T:  Bus=dd Lev=dd Prnt=dd Port=dd Cnt=dd Dev#=ddd Spd=dddd MxCh=dd */
@@ -476,6 +478,58 @@ static char *usb_dump_string(char *start, char *end,
 
 #endif /* PROC_EXTRA */
 
+//SYNO BEGIN
+int blIsUSBDeviceAtFrontPort(struct usb_device *usbdev)
+{
+        char buf[256];
+
+        if(usbdev && usbdev->bus) {
+                memset(buf, 0, sizeof(buf));
+                sprintf(buf, "%s-%s", usbdev->bus->bus_name, usbdev->devpath);
+                if(!strcmp(buf,"0000:01:0d.0-1")) {
+                        return 1;
+                }
+                
+		if(!strcmp(buf,"0000:00:1d.7-3") || !strcmp(buf,"0000:00:1d.1-1")) {
+                        return 1;
+                }
+                
+		if(0 == strcmp(buf,"ehci_marvell.70059-1.3")) {
+                        return 1;
+                }
+                
+		if(!strcmp(buf,"orion-ehci.0-1.3")) {
+                        return 1;
+                }
+                
+		if(!strcmp(buf,"fsl-ehci.0-1.2")) {
+                        return 1;
+                }
+                
+		if(!strcmp(buf, "ehci_marvell.1-1") ||
+                   !strcmp(buf, "ehci_marvell.0-1")) {
+                        return 1;
+                }
+        }
+        return 0;
+}
+
+int blIsCardReader(struct usb_device *usbdev)
+{
+        char buf[256];
+
+        if(usbdev && usbdev->bus) {
+                memset(buf, 0, sizeof(buf));
+                sprintf(buf, "%s-%s", usbdev->bus->bus_name, usbdev->devpath);
+                if(!strcmp(buf,"0000:01:0d.1-1")) {
+                        return 1;
+                }
+        }
+        return 0;
+}
+EXPORT_SYMBOL(blIsCardReader);
+//SYNO END
+
 /*****************************************************************/
 
 /* This is a recursive function. Parameters:
@@ -532,7 +586,21 @@ static ssize_t usb_device_dump(char __user **buffer, size_t *nbytes,
 	default:
 		speed = "??";
 	}
-	data_end = pages_start + sprintf(pages_start, format_topo,
+// SYNO BEGIN
+        if(blIsUSBDeviceAtFrontPort(usbdev))
+                data_end = pages_start + sprintf(pages_start, format_topo,
+                           bus->busnum, level, parent_devnum,
+                           USBCOPY_PORT_LOCATION, count, usbdev->devnum,
+                           speed, usbdev->maxchild);
+        
+	else if(blIsCardReader(usbdev))
+                data_end = pages_start + sprintf(pages_start, format_topo,
+                           bus->busnum, level, parent_devnum,
+                           SDCOPY_PORT_LOCATION, count, usbdev->devnum,
+                           speed, usbdev->maxchild);
+// SYNO END
+	else
+		data_end = pages_start + sprintf(pages_start, format_topo,
 			bus->busnum, level, parent_devnum,
 			index, count, usbdev->devnum,
 			speed, usbdev->maxchild);
@@ -594,7 +662,18 @@ static ssize_t usb_device_dump(char __user **buffer, size_t *nbytes,
 	/* Now look at all of this device's children. */
 	usb_hub_for_each_child(usbdev, chix, childdev) {
 		usb_lock_device(childdev);
-		ret = usb_device_dump(buffer, nbytes, skip_bytes,
+
+// SYNO BEGIN                        
+		if(blIsUSBDeviceAtFrontPort(usbdev))
+                        ret = usb_device_dump(buffer, nbytes, skip_bytes, file_offset, childdev,
+                                                                          bus, level + 1, USBCOPY_PORT_LOCATION, ++cnt);
+                
+		else if(blIsCardReader(usbdev))
+                        ret = usb_device_dump(buffer, nbytes, skip_bytes, file_offset, childdev,
+                                                                          bus, level + 1, SDCOPY_PORT_LOCATION, ++cnt);
+// SYNO END
+                else		
+			ret = usb_device_dump(buffer, nbytes, skip_bytes,
 				      file_offset, childdev, bus,
 				      level + 1, chix - 1, ++cnt);
 		usb_unlock_device(childdev);
