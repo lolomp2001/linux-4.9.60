@@ -31,6 +31,30 @@
 
 #include "usb.h"
 
+#include <linux/synobios.h>
+
+extern int blIsUSBDeviceAtFrontPort(struct usb_device *usbdev);
+extern int blIsCardReader(struct usb_device *usbdev);
+int (*funcSYNOGetHwCapability)(CAPABILITY *) = NULL;
+
+static unsigned char has_cardreader(void)
+{
+        CAPABILITY Capability;
+        unsigned char ret = 0;
+
+        Capability.id = CAPABILITY_CARDREADER;
+        Capability.support = 0;
+
+        if (funcSYNOGetHwCapability) {
+                if (funcSYNOGetHwCapability(&Capability)){
+                        goto END;
+                }
+        }
+
+        ret = Capability.support;
+END:
+        return ret;
+}
 
 /*
  * Adds a new dynamic USBdevice ID to this driver,
@@ -868,7 +892,19 @@ static int usb_uevent(struct device *dev, struct kobj_uevent_env *env)
 			   usb_dev->descriptor.bDeviceSubClass,
 			   usb_dev->descriptor.bDeviceProtocol))
 		return -ENOMEM;
+//SYNO BEGIN
+        if (blIsUSBDeviceAtFrontPort(usb_dev)) {
+                if (add_uevent_var(env, "FRONTPORT=1"))
+                        return -ENOMEM;
+        }
 
+        if(has_cardreader()) {
+                if (blIsCardReader(usb_dev)) {
+                        if (add_uevent_var(env, "CARDREADER=1"))
+                                return -ENOMEM;
+                }
+        }
+//SYNO END
 	return 0;
 }
 
